@@ -1,0 +1,177 @@
+---
+title: "Expansion of *Podarcis muralis* in British Columbia"
+description: "An exploration of the expansion of the common wall lizard in British Columbia using iNaturalist data."
+date: 2026-01-16
+categories: [lizards, iNaturalist, mapping]
+format:
+  html:
+    code-fold: true
+    out-width: "75%"
+    fig-align: "center"
+    fig-dpi: 300
+    lightbox: true
+editor: 
+  markdown:
+    wrap: 101
+---
+
+```{r}
+#| code-description: "Setup"
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(rnaturalearth)
+library(viridis)
+```
+
+## Context
+
+The Common Wall Lizard (*Podarcis muralis*), a small lizard native to Europe, has become a
+conspicuous new resident in many parts of British Columbia. Since its introduction to Vancouver
+Island in the 1970s from a small founding population, the lizard rapidly expanded. Its range has
+grown exponentially, now covering a large portion of the island and with satellite populations
+appearing on the mainland and surrounding islands.
+
+This exploration stems from my interest in putting together a CIRTA grant proposal together with some
+folks at UBC to study the dynamics of this invasion. The abstract of the proposal was as follows:
+
+> Canada’s harsh winters have historically acted as a natural barrier to many invasive animal species
+> that flourish elsewhere. However, climate change is shifting these thermal boundaries, putting
+> ecosystems that were once safe at risk. Predicting poleward range expansion is challenging because
+> standard correlative methods often omit factors such as physiology, behavior, and the ability for
+> local adaptation, which can help invasive animals succeed in seemingly unsuitable climates.
+> Therefore, there is an urgent need for mechanistic frameworks that go beyond correlation to improve
+> predictions of invasive spread. I propose to develop such a framework using the invasion of the
+> common wall lizard (Podarcis muralis) on Vancouver Island as a model system. Despite apparent
+> mismatches in climate for this Mediterranean ectotherm, P. muralis has rapidly expanded across
+> British Columbia since its introduction in 1970. Now present on the Canadian mainland, it poses a
+> serious ecological threat by outcompeting native reptiles and disrupting local food webs through
+> insect predation. Based at the University of British Columbia, I will first assess the current
+> range and traits of the invading lizards. In partnership with Dr. Katie Marshall and Dr. Chris
+> Harley, I will then use ecophysiological modeling to understand how local climates and habitats
+> influence P. muralis’s physiology and behavior. These insights will be incorporated into a
+> hierarchical Bayesian framework, developed with Dr. Marie Auger-Methé, to discern the mechanisms
+> underlying the spread of P. muralis while rigorously accounting for observational biases and
+> spatiotemporal autocorrelations. Beyond generating habitat suitability maps to forecast the wall
+> lizard’s future spread, this research will establish a transferable, scalable framework for
+> modeling the colonization of high-latitude regions by non-native ectotherms. Ultimately, the
+> proposed framework will provide a mechanistic basis for assessing invasion risks across Canada’s
+> shifting latitudinal gradients, including the increasingly vulnerable Arctic and sub-Arctic
+> regions.
+
+I ended up getting the proposal funded but I declined it. 
+
+## Data exploration
+
+Below, I explore some data I obtained from iNaturalist to visualize the expansion of *Podarcis
+muralis* in BC. The data includes observations of the species, with associated metadata such as
+location and date of observation.
+
+```{r}
+#| code-summary: "Read and clean data"
+
+# read data
+podarcis <- read.csv("podarcis-obs-bc.csv")
+
+# remove observations with missing coordinates
+podarcis <- podarcis |>
+  filter(!is.na(longitude) & !is.na(latitude)) |>
+  mutate(year = year(ymd_hms(time_observed_at))) |>
+  mutate(month = month(ymd_hms(time_observed_at))) |>
+  filter(!is.na(year)) |>
+  filter(longitude < -122)
+
+# sort by year
+podarcis <- podarcis[order(-podarcis$year), ]
+```
+
+Next, I use the function `ne_countries()` from the `rnaturalearth` package to get the country borders
+for Canada and the USA, which I will use as a base layer for plotting the observations.
+
+```{r}
+#| code-summary: "Get country borders for plotting"
+
+# get canada border
+canada_border <- ne_countries(
+  country = "canada",
+  scale = "large",
+  returnclass = "sf"
+)
+
+# get usa border
+usa_border <- ne_countries(
+  country = "united states of america",
+  scale = "large",
+  returnclass = "sf"
+)
+```
+
+With all that, I plot the observations of *Podarcis muralis* over space, using the country borders as
+a base layer.
+
+```{r}
+#| code-summary: "Plot observations over space"
+#| fig-width: 5
+#| fig-height: 5
+
+ggplot() +
+  geom_sf(data = canada_border, fill = "lightgray", color = "black") +
+  geom_sf(data = usa_border, fill = "lightgray", color = "black") +
+  geom_point(data = podarcis, aes(x = longitude, y = latitude, color = year)) +
+  scale_color_viridis(option = "viridis", discrete = FALSE) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "lightblue"),
+    panel.border = element_rect(fill = NA),
+    panel.grid = element_blank()
+  ) +
+  coord_sf(xlim = c(-125, -122), ylim = c(48, 50)) +
+  labs(x = "", y = "", color = "Year")
+```
+
+And I plot the number of observations per year to visualize the temporal expansion of the species.
+
+```{r}
+#| code-summary: "Plot observations over time"
+#| fig-width: 4
+#| fig-height: 3
+#| out-width: "75%"
+#| fig-align: "center"
+
+podarcis |>
+  group_by(year) |>
+  summarise(count = n()) |>
+  ggplot(aes(x = year, y = count)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  labs(x = "Year", y = "Number of Observations")
+```
+
+Lastly, I plot the observations by month, standardized by year to visualize the seasonal pattern of
+observations.
+
+```{r}
+#| code-summary: "Plot observations by month"
+#| fig-width: 5
+#| fig-height: 6
+#| out-width: "75%"
+#| fig-align: "center"
+#| message: false
+
+podarcis |>
+  group_by(year, month) |>
+  summarise(count = n()) |>
+  group_by(year) |>
+  mutate(relative_count = count / sum(count)) |>
+  ggplot(aes(x = month, y = year, fill = relative_count)) +
+  geom_tile() +
+  geom_text(aes(label = count), size = 3, color = "white") +
+  scale_fill_viridis() +
+  theme_minimal() +
+  scale_x_continuous(breaks = 1:12, labels = month.abb, expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), breaks = seq(2005, 2025, 1)) +
+  labs(x = "Month", y = "Year", fill = "Proportion")
+```

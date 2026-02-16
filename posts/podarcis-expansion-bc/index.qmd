@@ -15,6 +15,7 @@ editor:
     wrap: 101
 ---
 
+
 ```{r}
 #| code-description: "Setup"
 #| echo: false
@@ -25,6 +26,8 @@ library(tidyverse)
 library(rnaturalearth)
 library(viridis)
 ```
+
+![A common wall lizard (*Podarcis muralis*)](podarcis-muralis.jpg)
 
 ## Context
 
@@ -60,8 +63,6 @@ folks at UBC to study the dynamics of this invasion. The abstract of the proposa
 > proposed framework will provide a mechanistic basis for assessing invasion risks across Canada’s
 > shifting latitudinal gradients, including the increasingly vulnerable Arctic and sub-Arctic
 > regions.
-
-I ended up getting the proposal funded but I declined it. 
 
 ## Data exploration
 
@@ -127,11 +128,18 @@ ggplot() +
     panel.border = element_rect(fill = NA),
     panel.grid = element_blank()
   ) +
-  coord_sf(xlim = c(-125, -122), ylim = c(48, 50)) +
-  labs(x = "", y = "", color = "Year")
+  coord_sf(xlim = c(-126, -122), ylim = c(48, 50.5)) +
+  labs(color = "Year") +
+  theme(axis.title = element_blank())
 ```
 
-And I plot the number of observations per year to visualize the temporal expansion of the species.
+It looks like the origin of the invasion is located in southern Vancouver Island. 
+Expansion proceeds northwards and eastwards towards the mainland. It seems to 
+have gone all around the straight of Georgia and not by island-hopping through
+the Gulf Islands. As of recent years, it seems to have gone all the way to the
+mainland and is now present in the city of Vancouver.
+
+Below I plot the number of observations per year to visualize the temporal expansion of the species.
 
 ```{r}
 #| code-summary: "Plot observations over time"
@@ -149,6 +157,8 @@ podarcis |>
   theme_minimal() +
   labs(x = "Year", y = "Number of Observations")
 ```
+
+As with most iNaturalist data, there is a strong bias towards recent year. 
 
 Lastly, I plot the observations by month, standardized by year to visualize the seasonal pattern of
 observations.
@@ -175,3 +185,7 @@ podarcis |>
   scale_y_continuous(expand = c(0, 0), breaks = seq(2005, 2025, 1)) +
   labs(x = "Month", y = "Year", fill = "Proportion")
 ```
+
+Looks like it peaks in April and again in August-September, although with some
+year-to-year variation specially between 2019 and 2025 when there is full data
+coverage. 

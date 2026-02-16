@@ -1,6 +1,6 @@
 ---
 title: "Welcome to `backburner`!"
-subtitle: "Where I explore random stuff that some day may be useful"
+subtitle: "where I explore random stuff that some day may or may not be useful"
 listing:
   contents: posts
   sort: "date desc"
@@ -11,13 +11,14 @@ listing:
   sort-ui: true
   filter-ui: true
 page-layout: full
-title-block-banner: false
+title-block-banner: true
 editor: 
   markdown:
     wrap: 100
 ---
 
 In this blog, I will be creating new posts with the intention of exploring
- random topics that I find interesting. These posts may be about anything, and 
- they may be more or less polished. The idea is to have a place where I can share 
- my thoughts and ideas without the pressure of having to create a perfect post.
+random topics that I find interesting. Some of these topics will be 
+research-related, while others may be just random passing thoughts I decided
+to waste my time on. The goal is to have fun, learn new things and store all 
+of these random explorations in one place. 

@@ -1,0 +1,15 @@
+{
+  "hash": "a5d81c6d84a47063db89651193a80479",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Expansion of 3 invasive lizards in Miami\"\ndescription: \"An exploration of the expansion of three invasive lizard species in Miami using iNaturalist data.\"\ndate: 2026-01-16\ncategories: [lizards, iNaturalist, mapping]\nformat:\n  html:\n    code-fold: true\n    out-width: \"75%\"\n    fig-align: \"center\"\n    fig-dpi: 300\n    lightbox: true\neditor: \n  markdown:\n    wrap: 100\n---\n\n::: {.cell code-description='Setup'}\n\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -171,6 +171,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="podarcis-muralis.jpg" class="lightbox" data-gallery="quarto-lightbox-gallery-1" title="A common wall lizard (Podarcis muralis)"><img src="podarcis-muralis.jpg" class="img-fluid figure-img" alt="A common wall lizard (Podarcis muralis)"></a></p>
+<figcaption>A common wall lizard (<em>Podarcis muralis</em>)</figcaption>
+</figure>
+</div>
 <section id="context" class="level2">
 <h2 class="anchored" data-anchor-id="context">Context</h2>
 <p>The Common Wall Lizard (<em>Podarcis muralis</em>), a small lizard native to Europe, has become a conspicuous new resident in many parts of British Columbia. Since its introduction to Vancouver Island in the 1970s from a small founding population, the lizard rapidly expanded. Its range has grown exponentially, now covering a large portion of the island and with satellite populations appearing on the mainland and surrounding islands.</p>
@@ -178,7 +184,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <blockquote class="blockquote">
 <p>Canada’s harsh winters have historically acted as a natural barrier to many invasive animal species that flourish elsewhere. However, climate change is shifting these thermal boundaries, putting ecosystems that were once safe at risk. Predicting poleward range expansion is challenging because standard correlative methods often omit factors such as physiology, behavior, and the ability for local adaptation, which can help invasive animals succeed in seemingly unsuitable climates. Therefore, there is an urgent need for mechanistic frameworks that go beyond correlation to improve predictions of invasive spread. I propose to develop such a framework using the invasion of the common wall lizard (Podarcis muralis) on Vancouver Island as a model system. Despite apparent mismatches in climate for this Mediterranean ectotherm, P. muralis has rapidly expanded across British Columbia since its introduction in 1970. Now present on the Canadian mainland, it poses a serious ecological threat by outcompeting native reptiles and disrupting local food webs through insect predation. Based at the University of British Columbia, I will first assess the current range and traits of the invading lizards. In partnership with Dr.&nbsp;Katie Marshall and Dr.&nbsp;Chris Harley, I will then use ecophysiological modeling to understand how local climates and habitats influence P. muralis’s physiology and behavior. These insights will be incorporated into a hierarchical Bayesian framework, developed with Dr.&nbsp;Marie Auger-Methé, to discern the mechanisms underlying the spread of P. muralis while rigorously accounting for observational biases and spatiotemporal autocorrelations. Beyond generating habitat suitability maps to forecast the wall lizard’s future spread, this research will establish a transferable, scalable framework for modeling the colonization of high-latitude regions by non-native ectotherms. Ultimately, the proposed framework will provide a mechanistic basis for assessing invasion risks across Canada’s shifting latitudinal gradients, including the increasingly vulnerable Arctic and sub-Arctic regions.</p>
 </blockquote>
-<p>I ended up getting the proposal funded but I declined it.</p>
 </section>
 <section id="data-exploration" class="level2">
 <h2 class="anchored" data-anchor-id="data-exploration">Data exploration</h2>
@@ -235,18 +240,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.border =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="cn">NA</span>),</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.grid =</span> <span class="fu">element_blank</span>()</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">125</span>, <span class="sc">-</span><span class="dv">122</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">48</span>, <span class="dv">50</span>)) <span class="sc">+</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">""</span>, <span class="at">y =</span> <span class="st">""</span>, <span class="at">color =</span> <span class="st">"Year"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">126</span>, <span class="sc">-</span><span class="dv">122</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">48</span>, <span class="fl">50.5</span>)) <span class="sc">+</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">color =</span> <span class="st">"Year"</span>) <span class="sc">+</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.title =</span> <span class="fu">element_blank</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><a href="index_files/figure-html/unnamed-chunk-4-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="1500"></a></p>
+<p><a href="index_files/figure-html/unnamed-chunk-4-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="1500"></a></p>
 </figure>
 </div>
 </div>
 </div>
-<p>And I plot the number of observations per year to visualize the temporal expansion of the species.</p>
+<p>It looks like the origin of the invasion is located in southern Vancouver Island. Expansion proceeds northwards and eastwards towards the mainland. It seems to have gone all around the straight of Georgia and not by island-hopping through the Gulf Islands. As of recent years, it seems to have gone all the way to the mainland and is now present in the city of Vancouver.</p>
+<p>Below I plot the number of observations per year to visualize the temporal expansion of the species.</p>
 <div class="cell" data-layout-align="center">
 <details class="code-fold">
 <summary>Plot observations over time</summary>
@@ -262,11 +269,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="index_files/figure-html/unnamed-chunk-5-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></a></p>
+<p><a href="index_files/figure-html/unnamed-chunk-5-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="index_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></a></p>
 </figure>
 </div>
 </div>
 </div>
+<p>As with most iNaturalist data, there is a strong bias towards recent year.</p>
 <p>Lastly, I plot the observations by month, standardized by year to visualize the seasonal pattern of observations.</p>
 <div class="cell" data-layout-align="center">
 <details class="code-fold">
@@ -288,11 +296,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="index_files/figure-html/unnamed-chunk-6-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></a></p>
+<p><a href="index_files/figure-html/unnamed-chunk-6-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></a></p>
 </figure>
 </div>
 </div>
 </div>
+<p>Looks like it peaks in April and again in August-September, although with some year-to-year variation specially between 2019 and 2025 when there is full data coverage.</p>
 
 
 </section>
@@ -390,7 +399,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
-      var filterRegex = new RegExp('/' + window.location.host + '/');
+      var filterRegex = new RegExp("https:\/\/ggcostoya\.github\.io\/backburner\/");
     var isInternal = (href) => {
         return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
     }

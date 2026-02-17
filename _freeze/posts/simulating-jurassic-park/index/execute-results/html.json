@@ -1,0 +1,17 @@
+{
+  "hash": "f2da74d2f5a030f57e7523641915fc01",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: Simulating Jurassic Park\ndescription: \"Learning Generalized Lotka-Volterra models by simulating a Jurassic Park ecosystem\"\ndate: 2026-01-17\ncategories: [simulation]\nformat:\n  html:\n    code-fold: true\n    fig-dpi: 300\n    lightbox: true\neditor: \n  markdown:\n    wrap: 100\n---\n\n::: {.cell code-description='Setup'}\n\n```{.r .cell-code}\nlibrary(tidyverse)\n```\n:::\n\n::: {.cell layout-align=\"center\"}\n\n```{.r .cell-code  code-fold=\"true\"}\n# define species sizes\nsizes <- c(1, 0.6, 0.3, 0.1)\n\n# define species diet\ndiet <- c(0, 1, 0, 1)\n\n# define initial population sizes\npop_t0 <- c(50, 50, 50, 50)\n\n# define carrying capacities\nks <- c(100, 100, 100, 100)\n\n# create an interaction matrix \ninteraction_matrix <- matrix(NA, nrow = length(sizes), ncol = length(sizes))\n\n# populate interaction matrix\nfor(i in 1:length(sizes)) {\n  for(j in 1:length(sizes)) {\n    if(i == j) {\n      interaction_matrix[i, j] <- 0\n    } else if(diet[i] == 1 && diet[j] == 0) {\n      interaction_matrix[i, j] <- sizes[i]/sizes[j] * 0.25\n    } else {\n      interaction_matrix[i, j] <- 0\n    }\n  }\n}\n\n# loop to simulate population dynamics\ntimesteps <- 100\n\n# create a data frame to store population sizes over time\npopulations <- data.frame(time = 1:timesteps)\nfor(i in 1:length(sizes)) {\n  populations[[paste0(\"species_\", i)]] <- NA\n}\n\n# loop to simulate population dynamics\nfor(t in 1:timesteps) {\n  if(t == 1) {\n    populations[t, 2:(length(sizes) + 1)] <- pop_t0\n  } else {\n    for(i in 1:length(sizes)) {\n      growth_rate <- 0.1 * (1 - populations[t-1, i + 1] / ks[i])\n      interaction_effect <- sum(interaction_matrix[i, ] * populations[t-1, 2:(length(sizes) + 1)])\n      populations[t, i + 1] <- populations[t-1, i + 1] + growth_rate * populations[t-1, i + 1] + interaction_effect\n    }\n  }\n}\n\n# plot population dynamics\npopulations |> \n  pivot_longer(cols = -time, names_to = \"species\", values_to = \"population\") |>\n  #filter(species == \"species_1\") |>\n  #mutate(species = factor(species, levels = paste0(\"species_\", 1:length(sizes)))) |>\n  ggplot(aes(x = time, y = population, color = species)) +\n  geom_line() \n```\n\n::: {.cell-output-display}\n![](index_files/figure-html/unnamed-chunk-2-1.png){fig-align='center' width=75%}\n:::\n:::",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

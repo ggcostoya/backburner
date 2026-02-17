@@ -1,0 +1,89 @@
+---
+title: Simulating Jurassic Park
+description: "Learning Generalized Lotka-Volterra models by simulating a Jurassic Park ecosystem"
+date: 2026-01-17
+categories: [simulation]
+format:
+  html:
+    code-fold: true
+    fig-dpi: 300
+    lightbox: true
+editor: 
+  markdown:
+    wrap: 100
+---
+
+```{r}
+#| code-description: "Setup"
+#| message: false
+#| warning: false
+
+library(tidyverse)
+```
+
+```{r}
+#| code-fold: true
+#| fig-align: "center"
+#| fig-width: 6
+#| fig-height: 4
+#| out-width: "75%"
+
+# define species sizes
+sizes <- c(1, 0.6, 0.3, 0.1)
+
+# define species diet
+diet <- c(0, 1, 0, 1)
+
+# define initial population sizes
+pop_t0 <- c(50, 50, 50, 50)
+
+# define carrying capacities
+ks <- c(100, 100, 100, 100)
+
+# create an interaction matrix 
+interaction_matrix <- matrix(NA, nrow = length(sizes), ncol = length(sizes))
+
+# populate interaction matrix
+for(i in 1:length(sizes)) {
+  for(j in 1:length(sizes)) {
+    if(i == j) {
+      interaction_matrix[i, j] <- 0
+    } else if(diet[i] == 1 && diet[j] == 0) {
+      interaction_matrix[i, j] <- sizes[i]/sizes[j] * 0.25
+    } else {
+      interaction_matrix[i, j] <- 0
+    }
+  }
+}
+
+# loop to simulate population dynamics
+timesteps <- 100
+
+# create a data frame to store population sizes over time
+populations <- data.frame(time = 1:timesteps)
+for(i in 1:length(sizes)) {
+  populations[[paste0("species_", i)]] <- NA
+}
+
+# loop to simulate population dynamics
+for(t in 1:timesteps) {
+  if(t == 1) {
+    populations[t, 2:(length(sizes) + 1)] <- pop_t0
+  } else {
+    for(i in 1:length(sizes)) {
+      growth_rate <- 0.1 * (1 - populations[t-1, i + 1] / ks[i])
+      interaction_effect <- sum(interaction_matrix[i, ] * populations[t-1, 2:(length(sizes) + 1)])
+      populations[t, i + 1] <- populations[t-1, i + 1] + growth_rate * populations[t-1, i + 1] + interaction_effect
+    }
+  }
+}
+
+# plot population dynamics
+populations |> 
+  pivot_longer(cols = -time, names_to = "species", values_to = "population") |>
+  #filter(species == "species_1") |>
+  #mutate(species = factor(species, levels = paste0("species_", 1:length(sizes)))) |>
+  ggplot(aes(x = time, y = population, color = species)) +
+  geom_line() 
+
+```

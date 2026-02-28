@@ -1,0 +1,181 @@
+---
+title: "Plotting maps with iNaturalist and temperature data"
+description: "Some quick examples of how to download and plot iNaturalist and temperature maps in R"
+date: 2024-06-17
+categories: [iNaturalist, mapping]
+format:
+  html:
+    code-fold: true
+    out-width: "75%"
+    fig-align: "center"
+    fig-dpi: 300
+    lightbox: true
+---
+
+```{r setup}
+#| summary: "Setup"
+#| message: false
+#| warning: false
+
+# packages
+library(tidyverse)
+library(rinat)
+library(geodata)
+library(elevatr)
+library(sf)
+library(terra)
+library(tidyterra)
+```
+
+## Context
+
+I often find myself needing to quickly download and plot iNaturalist data for a given species, and I also often want to plot temperature maps for a given region. Below is a quick example of how to do so for **western fence lizards** in the area in and around Reno, Nevada. 
+
+## Downloading iNaturalist data
+
+I will use the `get_inat_obs()` function from the `rinat` package to download iNaturalist observations of western fence lizards in the Reno area. Note that `get_inat_obs()` has a lot of options for filtering the data and can be pretty slow if you are downloading a lot of data. 
+
+```{r download-inat-obs}
+#| summary: "Downloading iNaturalist observations"
+
+# define bound box for Reno area
+reno_bbox <- c(39.25, -120.5, 39.75, -119.5)
+
+# download iNaturalist observations of western fence lizards in the Reno area
+lizard_obs <- get_inat_obs(
+  taxon_name = "Sceloporus occidentalis",
+  quality = "research", # iNat research quality only
+  bounds = reno_bbox, # must be S,W,N,E order
+  maxresults = 2000 # max can only be 10K
+)
+```
+
+To have a pretty background, I will also download elevation data from the same area using the `get_elev_raster()` function from the `geodata` package.
+
+```{r download-elevation-data}
+#| summary: "Downloading elevation data"
+
+# define grid for elevation data
+elev_grid <- expand.grid(
+  lat = seq(reno_bbox[1], reno_bbox[3], by = 0.01),
+  lon = seq(reno_bbox[2], reno_bbox[4], by = 0.01)
+)
+
+# set elevations ar sf object
+elev_grid_sf <- st_as_sf(elev_grid, coords = c("lon", "lat"), crs = 4326)
+
+# download elevation data as a raster
+elev_raster <- elevatr::get_elev_raster(elev_grid_sf, z = 8, clip = "bbox")
+
+# transform elevation raster to data frame
+elev_df <- as.data.frame(elev_raster, xy = TRUE) |> rename(elevation = 3)
+
+# remove negative elevations (i.e., water)
+elev_df <- elev_df |> filter(elevation >= 0)
+```
+
+Now let's plot the data. Note that I am using the `scale_fill_whitebox_c()` function from `terra` to obtain a nice color palette for elevation data. Check more elevation color palettes [here](https://dieghernan.github.io/tidyterra/reference/scale_whitebox.html?q=atlas#ref-examples). 
+
+```{r plot-inat-elevation}
+#| summary: "Plotting iNaturalist observations and elevation data"
+#| warning: false
+#| message: false
+#| fig-width: 7
+ggplot() +
+  geom_raster(data = elev_df, aes(x = x, y = y, fill = elevation)) +
+  geom_contour(
+    data = elev_df, aes(x = x, y = y, z = elevation),
+    color = "white", alpha = 0.5
+  ) +
+  scale_fill_whitebox_c(palette = "high_relief") +
+  geom_point(
+    data = lizard_obs, aes(x = longitude, y = latitude), color = "darkred"
+  ) +
+  scale_x_continuous(
+    expand = c(0, 0), 
+    breaks = seq(-120.5, -119.5, by = 0.25),
+    labels = paste(seq(-120.5, -119.5, by = 0.25), "°W")
+  ) +
+  scale_y_continuous(
+    expand = c(0, 0),
+    breaks = seq(39.25, 39.75, by = 0.25),
+    labels = paste(seq(39.25, 39.75, by = 0.25), "°N")
+  ) +
+  labs(fill = "Elevation (m)") +
+  coord_map(
+    xlim = c(reno_bbox[2], reno_bbox[4]),
+    ylim = c(reno_bbox[1], reno_bbox[3])
+  ) +
+  theme(axis.title = element_blank())
+```
+
+## Downloading and plotting temperature data
+
+Next, I will use the `geodata` package to download temperature data for the same area. I will use the `worldclim_country()` function to download  climate data at a resolution of 0.5 minutes for the US, and then I will crop the data to the Reno area using the `terra` package.
+
+>Note: Downloaidng global climate data can take a while and will be a big file. Set the `path = tempdir()` argument to download the data to a temporary directory that will be deleted after the R session ends. If you want to keep the data, set `path` to a directory on your computer where you want to save the data.
+
+```{r download-temperature-data}
+#| eval: FALSE
+#| summary: "Downloading temperature data"
+
+# Note: Not running this here because it takes a while to download data.
+
+# download global climate data at 1 minute resolution
+climate_data <- geodata::worldclim_country(
+  var = "tavg", # average temperature
+  res = 0.5, # resolution in minutes (0.5 = 30 seconds)
+  country = "usa", # country to download data for
+  path = tempdir(), # download to temporary directory
+)
+
+# crop climate data to Reno area
+climate_data_cropped <- terra::crop(
+  climate_data,
+  terra::ext(reno_bbox[2], reno_bbox[4], reno_bbox[1], reno_bbox[3]) # must be W,E,S,N order # nolint
+)
+
+# get only data for June (i.e., month 6)
+climate_data_cropped <- climate_data_cropped[[6]]
+
+# transform climate data to data frame
+climate_df <- as.data.frame(climate_data_cropped, xy = TRUE) |>
+  rename(temperature = 3)
+
+# save climate_df to .rda file
+save(climate_df, file = "posts/inat-and-temp-data/climate_df.rda")
+```
+
+Now let's plot the temperature data.
+
+```{r plot-temperature-data}
+#| summary: "Plotting temperature data"
+#| warning: false
+#| message: false
+#| fig-width: 7
+
+# load saved climate data
+load("climate_df.rda")
+
+# plot temperature data
+climate_df |>
+  ggplot(aes(x = x, y = y, fill = temperature)) +
+  geom_raster() +
+  scale_fill_whitebox_c(palette = "muted") +
+  scale_x_continuous(
+    expand = c(0, 0),
+    breaks = seq(-120.5, -119.5, by = 0.25),
+    labels = paste0(seq(-120.5, -119.5, by = 0.25), "°W")
+  ) +
+  scale_y_continuous(
+    expand = c(0, 0),
+    breaks = seq(39.25, 39.75, by = 0.25),
+    labels = paste(seq(39.25, 39.75, by = 0.25), "°N")
+  ) +
+  labs(fill = "Avg. June\nTemperature (°C)") +
+  coord_map(
+    xlim = c(reno_bbox[2], reno_bbox[4]),
+    ylim = c(reno_bbox[1], reno_bbox[3])
+  ) +
+  theme(axis.title = element_blank())
+```

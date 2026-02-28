@@ -29,7 +29,7 @@ library(tidyverse)
 #| out-width: "75%"
 
 # define species sizes
-sizes <- c(1, 0.6, 0.3, 0.1)
+sizes <- c(0.8, 1, 0.1, 0.3)
 
 # define species diet
 diet <- c(0, 1, 0, 1)
@@ -40,7 +40,7 @@ pop_t0 <- c(50, 50, 50, 50)
 # define carrying capacities
 ks <- c(100, 100, 100, 100)
 
-# create an interaction matrix 
+# create an interaction matrix
 interaction_matrix <- matrix(NA, nrow = length(sizes), ncol = length(sizes))
 
 # populate interaction matrix
@@ -84,6 +84,6 @@ populations |>
   #filter(species == "species_1") |>
   #mutate(species = factor(species, levels = paste0("species_", 1:length(sizes)))) |>
   ggplot(aes(x = time, y = population, color = species)) +
-  geom_line() 
+  geom_line(alpha = 0.8, linewidth = 2) 
 
 ```

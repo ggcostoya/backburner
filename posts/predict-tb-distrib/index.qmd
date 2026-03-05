@@ -1,0 +1,362 @@
+---
+title: "Predicting body temperature distributions from TPC shapes"
+description: "An exploration of how to predict body temperature distributions from thermal performance curve shapes and microclimate data."
+date: 2024-03-05
+categories: [model]
+format:
+  html:
+    code-fold: true
+    out-width: "50%"
+    fig-align: "center"
+    fig-dpi: 300
+    lightbox: true
+---
+
+```{r setup}
+#| code-description: "Setup"
+#| message: false
+#| warning: false
+
+# packages
+library(tidyverse)
+library(sn)
+library(kableExtra)
+
+```
+
+## Context
+
+I have been exploring if it is possible to predict the distribution of body temperatures that an ectotherm experiences in a given environment based on the shape of its thermal performance curve (TPC) and microclimate data. Below is a quick exploration of how to do so in R.
+
+## Defining functions
+
+First, I define a TPC function based on [Deutsch et al. (2008)](https://www.pnas.org/doi/10.1073/pnas.0709472105). This function uses T<sub>opt</sub>, CT<sub>min</sub>, and CT<sub>max</sub> to calculate the performance of an organism at a given body temperature. These parameters are often estimated from empirical data so it makes the whole thing very easily interpretable. 
+
+```{r tpc-function}
+#| code-description: "Defining TPC function"
+
+# define TPC function
+tpc <- function(temps, topt, ctmin, ctmax) {
+
+  # initialize performance vector and define psig
+  perf <- rep(NA, length(temps))
+  psig <- -((ctmin - topt) / 4)
+
+  # calculate performance
+  for (i in seq_along(temps)){
+    if (temps[i] < topt) {
+      perf[i] <- exp(-((temps[i] - topt) / (2 * psig))^2)
+    } else {
+      perf[i] <- 1 - ((temps[i] - topt) / (topt - ctmax))^2
+    }
+  }
+
+  # correct for negative values and return
+  ifelse(perf < 0, 0, perf)
+
+}
+
+# example usage
+temps <- seq(0, 40, by = 0.1)
+topt <- 25
+ctmin <- 10
+ctmax <- 35
+tpc_values <- tpc(temps, topt, ctmin, ctmax)
+tibble(temps, tpc_values) |>
+  ggplot(aes(x = temps, y = tpc_values)) +
+  geom_line(linewidth = 2) +
+  labs(x = "Body Temperature (°C)", y = "Performance") +
+  theme_minimal()
+```
+
+Second, I define a function that generates a skew-normal distribution of body temperatures based on a mean, standard deviation, and skewness parameter. To do this I use two functions:
+
+- `cp2dp()` from the `sn` package to convert the mean, sd, and skewness parameters to the location, scale, and shape parameters of the skew-normal distribution.
+- `dsn()` from the `sn` package to calculate the density of the skew-normal distribution at a given set of body temperatures.
+
+```{r create-tb-distribs}
+#| code-description: "Defining function to generate body temperature distributions"
+
+gen_tb_distrib <- function(temps, mean, sd, skew) {
+
+  # stop if SD is negative or if skew is outside of -1 to 1
+  if (sd < 0) stop("SD must be non-negative")
+  if (skew <= -1 || skew >= 1) stop("Skew must be between -0.99 and 0.99")
+
+  # estimate the parameters of the skew-normal distribution
+  params <- cp2dp(c(mean, sd, skew), "SN")
+
+  # generate a sequence of body temperatures and calculate the density
+  dsn(temps, xi = params[1], omega = params[2], alpha = params[3])
+
+}
+
+# example usage
+tb_distrib <- gen_tb_distrib(
+  temps = seq(0, 50, by = 0.1), mean = 25, sd = 5, skew = 0.5
+)
+tibble(temps = seq(0, 50, by = 0.1), density = tb_distrib) |>
+  ggplot(aes(x = temps, y = density)) +
+  geom_line(linewidth = 2) +
+  labs(x = "Body Temperature (°C)", y = "Density") +
+  theme_minimal()
+```
+
+Third, I define a function to calculate the expected fitness of a TPC under a given body temperature distribution. I do this using the [Vasseur et al. (2014)](https://royalsocietypublishing.org/rspb/article/281/1779/20132612/77056) approach, which is based on integrating the product of the TPC and the body temperature distribution across all possible body temperatures.
+
+```{r expected-fitness}
+#| code-description: "Defining function to calculate expected fitness"
+
+exp_fitness <- function(topt, ctmin, ctmax, mean_tb, sd_tb, skew_tb) {
+
+  if (sd_tb == 0) {
+    tpc(mean_tb, topt, ctmin, ctmax)
+
+  } else {
+    # function to calculate integrand
+    integrand <- function(temps) {
+      tpc(temps, topt, ctmin, ctmax) *  gen_tb_distrib(temps, mean_tb, sd_tb, skew_tb) # nolint
+    }
+
+    # integrate
+    integrate(integrand, lower = -30, upper = 60)$value
+  }
+}
+
+# example usage
+exp_fitness(topt = 25, ctmin = 10, ctmax = 35, mean_tb = 25, sd_tb = 5, skew_tb = 0.5) # nolint
+
+```
+
+Lastly, I define a function to calculate the risk of suffering a thermal injury, that is experiencing a body temperature below CT<sub>min</sub> or above CT<sub>max</sub>. This function is based on calculating the cumulative density of the body temperature distribution at CT<sub>min</sub> and CT<sub>max</sub>.
+
+```{r thermal-injury-risk}
+#| code-description: "Defining function to calculate thermal injury risk"
+
+ptinj <- function(ctmin, topt, ctmax, mean_tb, sd_tb, skew_tb) {
+
+  if (sd_tb == 0) {
+    if (mean_tb < ctmin || mean_tb > ctmax) {
+      1
+    } else {
+      0
+    }
+  } else {
+
+    # estimate the parameters of the skew-normal distribution
+    params <- cp2dp(c(mean_tb, sd_tb, skew_tb), "SN")
+
+    # generate a sequence of body temperatures and calculate the density
+    dsn(temps, xi = params[1], omega = params[2], alpha = params[3])
+
+    # calculate ptinj
+    ptinj_lower <- psn(ctmin, xi = params[1], omega = params[2], alpha = params[3]) # nolint
+    ptinj_upper <- 1 - psn(ctmax, xi = params[1], omega = params[2], alpha = params[3]) # nolint
+
+    # return sum of both tails
+    ptinj_lower + ptinj_upper
+  }
+}
+
+# example usage
+ptinj(ctmin = 10, topt = 25, ctmax = 35, mean_tb = 25, sd_tb = 5, skew_tb = 0.5) # nolint
+
+```
+
+## Estimating body temperature distribution parameters from TPC shape
+
+Below, I develop a pseudo-MCMC optimization algorithm to estimate the mean, sd, and skewness of the body temperature distribution that maximizes expected fitness while minimizing the risk of thermal injury. This is just a quick and dirty implementation to explore the idea, so it is not meant to be a rigorous optimization algorithm.
+
+```{r mcmc-optimization}
+#| code-description: "MCMC optimization to estimate body temperature distribution parameters" # nolint
+
+# define TPC shape
+topt <- 30
+ctmin <- 5
+ctmax <- 36
+
+# define number of iterations
+n_it <- 2000
+n_burn <- 1000
+
+# define objects to store mean_tb, sd_tb, and skew_tb values
+mean_tbs <- numeric(n_it)
+sd_tbs <- numeric(n_it)
+skew_tbs <- numeric(n_it)
+
+# set initial values
+mean_tb_init <- topt
+sd_tb_init <- 5
+skew_tb_init <- 0
+
+# initialize MCMC chain
+mean_tbs[1] <- mean_tb_init
+sd_tbs[1] <- sd_tb_init
+skew_tbs[1] <- skew_tb_init
+
+# run MCMC optimization
+for (i in 2:n_it) {
+
+  # propose a new value for mean_tb
+  mean_tb_prop <- rnorm(1, mean_tb_init, 5)
+  mean_tb_prop <- ifelse(mean_tb_prop < ctmin, ctmin + 0.1, ifelse(mean_tb_prop > ctmax, ctmax - 0.1, mean_tb_prop)) # nolint
+
+  # check if value is accepted
+  accept <- rbinom(1, 1, 0.234)
+  exp_fit_current <- exp_fitness(topt, ctmin, ctmax, mean_tbs[i - 1], sd_tbs[i - 1], skew_tbs[i - 1]) # nolint
+  exp_fit_prop <- exp_fitness(topt, ctmin, ctmax, mean_tb_prop, sd_tbs[i - 1], skew_tbs[i - 1]) # nolint
+  ptinj_current <- ptinj(ctmin, topt, ctmax, mean_tbs[i - 1], sd_tbs[i - 1], skew_tbs[i - 1]) # nolint
+  ptinj_prop <- ptinj(ctmin, topt, ctmax, mean_tb_prop, sd_tbs[i - 1], skew_tbs[i - 1]) # nolint
+
+  # accept or reject proposal
+  if (ptinj_prop < ptinj_current && exp_fit_prop > exp_fit_current && accept == 1) { # nolint
+    mean_tbs[i] <- mean_tb_prop
+    sd_tbs[i] <- sd_tbs[i - 1]
+    skew_tbs[i] <- skew_tbs[i - 1]
+  } else {
+    mean_tbs[i] <- mean_tbs[i - 1] + rnorm(1, 0, 0.1)
+    mean_tbs[i] <- ifelse(mean_tbs[i] < ctmin, ctmin + 0.1, ifelse(mean_tbs[i] > ctmax, ctmax - 0.1, mean_tbs[i])) # nolint
+    sd_tbs[i] <- sd_tbs[i - 1] * runif(1, 0.5, 1.5)
+    sd_tbs[i] <- ifelse(sd_tbs[i] < 1, 1, sd_tbs[i])
+    skew_tbs[i] <- skew_tbs[i - 1] + runif(1, -0.01, 0.01)
+    ifelse(skew_tbs[i] < -0.99, skew_tbs[i] <- -0.99, skew_tbs[i])
+    ifelse(skew_tbs[i] > 0.99, skew_tbs[i] <- 0.99, skew_tbs[i])
+  }
+
+  # propose a new value for sd_tb
+  sd_tb_prop <- 1 + rexp(1, 1)
+
+  # check if value is accepted
+  accept <- rbinom(1, 1, 0.234)
+  exp_fit_current <- exp_fitness(topt, ctmin, ctmax, mean_tbs[i], sd_tbs[i - 1], skew_tbs[i - 1]) # nolint
+  exp_fit_prop <- exp_fitness(topt, ctmin, ctmax, mean_tbs[i], sd_tb_prop, skew_tbs[i - 1]) # nolint
+  ptinj_current <- ptinj(ctmin, topt, ctmax, mean_tbs[i], sd_tbs[i - 1], skew_tbs[i - 1]) # nolint
+  ptinj_prop <- ptinj(ctmin, topt, ctmax, mean_tbs[i], sd_tb_prop, skew_tbs[i - 1]) # nolint
+
+  # accept or reject proposal
+  if (ptinj_prop < ptinj_current & exp_fit_prop > exp_fit_current & accept == 1) { # nolint
+    mean_tbs[i] <- mean_tbs[i]
+    sd_tbs[i] <- sd_tb_prop
+    skew_tbs[i] <- skew_tbs[i - 1]
+  } else {
+    mean_tbs[i] <- mean_tbs[i] + rnorm(1, 0, 0.1)
+    mean_tbs[i] <- ifelse(mean_tbs[i] < ctmin, ctmin + 0.1, ifelse(mean_tbs[i] > ctmax, ctmax - 0.1, mean_tbs[i])) # nolint
+    sd_tbs[i] <- sd_tbs[i - 1] * runif(1, 0.5, 1.5)
+    sd_tbs[i] <- ifelse(sd_tbs[i] < 1, 1, sd_tbs[i])
+    skew_tbs[i] <- skew_tbs[i - 1] + runif(1, -0.01, 0.01)
+    ifelse(skew_tbs[i] < -0.99, skew_tbs[i] <- -0.99, ifelse(skew_tbs[i] > 0.99, skew_tbs[i] <- 0.99, skew_tbs[i])) # nolint
+  }
+
+  # propose a new value for skew_tb
+  skew_tb_prop <- runif(1, -0.99, 0.99)
+
+  # check if value is accepted
+  accept <- rbinom(1, 1, 0.234)
+  exp_fit_current <- exp_fitness(topt, ctmin, ctmax, mean_tbs[i], sd_tbs[i], skew_tbs[i - 1]) # nolint
+  exp_fit_prop <- exp_fitness(topt, ctmin, ctmax, mean_tbs[i], sd_tbs[i], skew_tb_prop) # nolint
+  ptinj_current <- ptinj(ctmin, topt, ctmax, mean_tbs[i], sd_tbs[i], skew_tbs[i - 1]) # nolint
+  ptinj_prop <- ptinj(ctmin, topt, ctmax, mean_tbs[i], sd_tbs[i], skew_tb_prop) # nolint
+
+  # accept or reject proposal
+  if (ptinj_prop < ptinj_current && exp_fit_prop > exp_fit_current && accept == 1) { # nolint
+    mean_tbs[i] <- mean_tbs[i]
+    sd_tbs[i] <- sd_tbs[i]
+    skew_tbs[i] <- skew_tb_prop
+  } else {
+    mean_tbs[i] <- mean_tbs[i - 1] + rnorm(1, 0, 0.1)
+    mean_tbs[i] <- ifelse(mean_tbs[i] < ctmin, ctmin + 0.1, ifelse(mean_tbs[i] > ctmax, ctmax - 0.1, mean_tbs[i])) # nolint
+    sd_tbs[i] <- sd_tbs[i - 1] * runif(1, 0.5, 1.5)
+    sd_tbs[i] <- ifelse(sd_tbs[i] < 1, 1, sd_tbs[i])
+    skew_tbs[i] <- skew_tbs[i - 1] + runif(1, -0.01, 0.01)
+    ifelse(skew_tbs[i] < -0.99, skew_tbs[i] <- -0.99, ifelse(skew_tbs[i] > 0.99, skew_tbs[i] <- 0.99, skew_tbs[i])) # nolint
+  }
+}
+```
+
+Next, I plot the MCMC chains and the posterior distributions of the mean, sd, and skewness parameters of the body temperature distribution.
+
+```{r plot-chains-and-posteriors}
+#| code-description: "Plotting MCMC chains and posterior distributions"
+#| fig-width: 6
+#| fig-height: 4
+
+# plot posteriors of mean_tb, sd_tb, and skew_tb
+tibble(mean_tb = mean_tbs, sd_tb = sd_tbs, skew_tb = skew_tbs) |>
+  mutate(iteration = row_number()) |>
+  pivot_longer(cols = -c(iteration), names_to = "parameter", values_to = "value") |> # nolint
+  ggplot(aes(x = iteration, y = value)) +
+  geom_line() +
+  facet_wrap(~ parameter, scales = "free") +
+  labs(x = "Iteration", y = "Value") +
+  theme_minimal()
+
+# plot posterior distributions of mean_tb, sd_tb, and skew_tb
+tibble(mean_tb = mean_tbs, sd_tb = sd_tbs, skew_tb = skew_tbs) |>
+  mutate(iteration = row_number()) |>
+  filter(iteration > n_burn) |> # discard burn-in
+  select(-iteration) |>
+  pivot_longer(cols = everything(), names_to = "parameter", values_to = "value") |> # nolint
+  ggplot(aes(x = value)) +
+  geom_density(fill = "lightblue") +
+  facet_wrap(~ parameter, scales = "free") +
+  labs(x = "Value", y = "Density") +
+  theme_minimal()
+```
+
+In many of the test runs I did, the MCM algorithm swings too much, specially when estimating the mean. I have to think about how to make this as efficient as possible. 
+
+And finally, in the classic Bayesian fashion, I summarize the posterior distributions of the mean, sd, and skewness parameters of the body temperature distribution by calculating their means and 95% confidence intervals.
+
+```{r table-posteriors}
+#| code-description: "Summarizing posterior distributions of body temperature distribution parameters" # nolint
+
+# get average and 95% confidence interval of tb distribution parameters
+posterior <- tibble(mean_tb = mean_tbs, sd_tb = sd_tbs, skew_tb = skew_tbs) |>
+  mutate(iteration = row_number()) |>
+  filter(iteration > n_burn) |> # discard burn-in
+  select(-iteration) |>
+  pivot_longer(
+    cols = everything(), names_to = "parameter", values_to = "value"
+  ) |>
+  group_by(parameter) |>
+  summarise(
+    mean = mean(value),
+    lower = quantile(value, 0.025),
+    upper = quantile(value, 0.975)
+  )
+kbl(
+  posterior |>
+    rename(
+      `Parameter` = parameter,
+      `Mean` = mean,
+      `95% CI Lower` = lower,
+      `95% CI Upper` = upper
+    )
+) |>
+  kable_styling(full_width = FALSE)
+```
+
+Just to get a sense of the predicted body temperature distribution, I plot the TPC and the predicted body temperature distribution based on the mean values of the parameters estimated by the MCMC algorithm.
+
+```{r plot-tpc-and-tb-distribs}
+#| code-description: "Plotting TPC and predicted body temperature distribution"
+#| fig-width: 6
+
+# plot predicted body temperature distribution and TPC
+temps <- seq(0, 50, by = 0.1)
+tibble(
+  temps = temps,
+  tpc_values = tpc(temps, topt, ctmin, ctmax),
+  tb_density_mean = gen_tb_distrib(
+    temps, posterior$mean[1], posterior$mean[2], posterior$mean[3]
+  )
+) |>
+  ggplot(aes(x = temps)) +
+  geom_area(aes(y = tb_density_mean * 2), fill = "red", alpha = 0.5) +
+  geom_line(aes(y = tpc_values), color = "black", linewidth = 1.5) +
+  geom_vline(xintercept = topt, linetype = "dashed", color = "black") +
+  geom_vline(
+    xintercept = posterior$mean[1], linetype = "dashed", color = "red"
+  ) +
+  coord_cartesian(xlim = c(ctmin - 5, ctmax + 5))
+```

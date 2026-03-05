@@ -1,7 +1,7 @@
 ---
 title: "Plotting maps with iNaturalist and temperature data"
 description: "Some quick examples of how to download and plot iNaturalist and temperature maps in R"
-date: 2024-06-17
+date: 2025-02-17
 categories: [iNaturalist, mapping]
 format:
   html:
@@ -92,7 +92,7 @@ ggplot() +
     data = lizard_obs, aes(x = longitude, y = latitude), color = "darkred"
   ) +
   scale_x_continuous(
-    expand = c(0, 0), 
+    expand = c(0, 0),
     breaks = seq(-120.5, -119.5, by = 0.25),
     labels = paste(seq(-120.5, -119.5, by = 0.25), "°W")
   ) +

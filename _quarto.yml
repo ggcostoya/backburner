@@ -9,6 +9,11 @@ format:
   html:
     theme: cosmo
     css: styles.css
+    toc: true
+    toc-depth: 4
+    toc-expand: true
+    grid: 
+      body-width: 750px
 
 
 

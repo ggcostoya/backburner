@@ -6,14 +6,13 @@ categories: [model]
 format:
   html:
     code-fold: true
-    out-width: "50%"
     fig-align: "center"
     fig-dpi: 300
     lightbox: true
 ---
 
 ```{r setup}
-#| code-description: "Setup"
+#| code-summary: "Setup"
 #| message: false
 #| warning: false
 
@@ -33,7 +32,11 @@ I have been exploring if it is possible to predict the distribution of body temp
 First, I define a TPC function based on [Deutsch et al. (2008)](https://www.pnas.org/doi/10.1073/pnas.0709472105). This function uses T<sub>opt</sub>, CT<sub>min</sub>, and CT<sub>max</sub> to calculate the performance of an organism at a given body temperature. These parameters are often estimated from empirical data so it makes the whole thing very easily interpretable. 
 
 ```{r tpc-function}
-#| code-description: "Defining TPC function"
+#| code-summary: "Defining TPC function"
+#| out-width: "75%"
+#| fig-align: "center"
+#| fig-width: 4
+#| fig-height: 3
 
 # define TPC function
 tpc <- function(temps, topt, ctmin, ctmax) {
@@ -75,7 +78,11 @@ Second, I define a function that generates a skew-normal distribution of body te
 - `dsn()` from the `sn` package to calculate the density of the skew-normal distribution at a given set of body temperatures.
 
 ```{r create-tb-distribs}
-#| code-description: "Defining function to generate body temperature distributions"
+#| code-summary: "Defining function to generate body temperature distributions"
+#| out-width: "75%"
+#| fig-align: "center"
+#| fig-width: 4
+#| fig-height: 3
 
 gen_tb_distrib <- function(temps, mean, sd, skew) {
 
@@ -105,7 +112,7 @@ tibble(temps = seq(0, 50, by = 0.1), density = tb_distrib) |>
 Third, I define a function to calculate the expected fitness of a TPC under a given body temperature distribution. I do this using the [Vasseur et al. (2014)](https://royalsocietypublishing.org/rspb/article/281/1779/20132612/77056) approach, which is based on integrating the product of the TPC and the body temperature distribution across all possible body temperatures.
 
 ```{r expected-fitness}
-#| code-description: "Defining function to calculate expected fitness"
+#| code-summary: "Defining function to calculate expected fitness"
 
 exp_fitness <- function(topt, ctmin, ctmax, mean_tb, sd_tb, skew_tb) {
 
@@ -131,7 +138,7 @@ exp_fitness(topt = 25, ctmin = 10, ctmax = 35, mean_tb = 25, sd_tb = 5, skew_tb 
 Lastly, I define a function to calculate the risk of suffering a thermal injury, that is experiencing a body temperature below CT<sub>min</sub> or above CT<sub>max</sub>. This function is based on calculating the cumulative density of the body temperature distribution at CT<sub>min</sub> and CT<sub>max</sub>.
 
 ```{r thermal-injury-risk}
-#| code-description: "Defining function to calculate thermal injury risk"
+#| code-summary: "Defining function to calculate thermal injury risk"
 
 ptinj <- function(ctmin, topt, ctmax, mean_tb, sd_tb, skew_tb) {
 
@@ -168,7 +175,7 @@ ptinj(ctmin = 10, topt = 25, ctmax = 35, mean_tb = 25, sd_tb = 5, skew_tb = 0.5)
 Below, I develop a pseudo-MCMC optimization algorithm to estimate the mean, sd, and skewness of the body temperature distribution that maximizes expected fitness while minimizing the risk of thermal injury. This is just a quick and dirty implementation to explore the idea, so it is not meant to be a rigorous optimization algorithm.
 
 ```{r mcmc-optimization}
-#| code-description: "MCMC optimization to estimate body temperature distribution parameters" # nolint
+#| code-summary: "MCMC optimization to estimate body temperature distribution parameters" # nolint
 
 # define TPC shape
 topt <- 30
@@ -176,8 +183,8 @@ ctmin <- 5
 ctmax <- 36
 
 # define number of iterations
-n_it <- 2000
-n_burn <- 1000
+n_it <- 4000
+n_burn <- 2000
 
 # define objects to store mean_tb, sd_tb, and skew_tb values
 mean_tbs <- numeric(n_it)
@@ -276,14 +283,21 @@ for (i in 2:n_it) {
 Next, I plot the MCMC chains and the posterior distributions of the mean, sd, and skewness parameters of the body temperature distribution.
 
 ```{r plot-chains-and-posteriors}
-#| code-description: "Plotting MCMC chains and posterior distributions"
+#| code-summary: "Plotting MCMC chains and posterior distributions"
 #| fig-width: 6
-#| fig-height: 4
+#| fig-height: 2
+#| out-width: "75%"
+#| fig-align: "center"
 
 # plot posteriors of mean_tb, sd_tb, and skew_tb
 tibble(mean_tb = mean_tbs, sd_tb = sd_tbs, skew_tb = skew_tbs) |>
   mutate(iteration = row_number()) |>
   pivot_longer(cols = -c(iteration), names_to = "parameter", values_to = "value") |> # nolint
+  mutate(parameter = case_when(
+    parameter == "mean_tb" ~ "Mean Body Temperature",
+    parameter == "sd_tb" ~ "SD of Body Temperature",
+    parameter == "skew_tb" ~ "Skewness of Body Temperature"
+  )) |>
   ggplot(aes(x = iteration, y = value)) +
   geom_line() +
   facet_wrap(~ parameter, scales = "free") +
@@ -296,6 +310,11 @@ tibble(mean_tb = mean_tbs, sd_tb = sd_tbs, skew_tb = skew_tbs) |>
   filter(iteration > n_burn) |> # discard burn-in
   select(-iteration) |>
   pivot_longer(cols = everything(), names_to = "parameter", values_to = "value") |> # nolint
+  mutate(parameter = case_when(
+    parameter == "mean_tb" ~ "Mean Body Temperature",
+    parameter == "sd_tb" ~ "SD of Body Temperature",
+    parameter == "skew_tb" ~ "Skewness of Body Temperature"
+  )) |>
   ggplot(aes(x = value)) +
   geom_density(fill = "lightblue") +
   facet_wrap(~ parameter, scales = "free") +
@@ -308,7 +327,7 @@ In many of the test runs I did, the MCM algorithm swings too much, specially whe
 And finally, in the classic Bayesian fashion, I summarize the posterior distributions of the mean, sd, and skewness parameters of the body temperature distribution by calculating their means and 95% confidence intervals.
 
 ```{r table-posteriors}
-#| code-description: "Summarizing posterior distributions of body temperature distribution parameters" # nolint
+#| code-summary: "Summarizing posterior distributions of body temperature distribution parameters" # nolint
 
 # get average and 95% confidence interval of tb distribution parameters
 posterior <- tibble(mean_tb = mean_tbs, sd_tb = sd_tbs, skew_tb = skew_tbs) |>
@@ -339,8 +358,11 @@ kbl(
 Just to get a sense of the predicted body temperature distribution, I plot the TPC and the predicted body temperature distribution based on the mean values of the parameters estimated by the MCMC algorithm.
 
 ```{r plot-tpc-and-tb-distribs}
-#| code-description: "Plotting TPC and predicted body temperature distribution"
-#| fig-width: 6
+#| code-summary: "Plotting TPC and predicted body temperature distribution"
+#| fig-width: 4
+#| fig-height: 3
+#| out-width: "75%"
+#| fig-align: "center"
 
 # plot predicted body temperature distribution and TPC
 temps <- seq(0, 50, by = 0.1)
@@ -358,5 +380,12 @@ tibble(
   geom_vline(
     xintercept = posterior$mean[1], linetype = "dashed", color = "red"
   ) +
+  theme_minimal() +
+  labs(x = "Body Temperature (°C)", y = "Performance / Density") +
   coord_cartesian(xlim = c(ctmin - 5, ctmax + 5))
 ```
+
+## Next steps
+
+- I have to improve the MCMC algorithm so it doesn't bounce as much. I should do some deep diving into the MCMC literature to see how to do this in a more efficient way.
+- I should also think about how to incorporate bimodal body temperature distributions or body temperature distributions arising from a function of body temperature fluctuation over time (e.g., diurnal vs nocturnal temperatures). 

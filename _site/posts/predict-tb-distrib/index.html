@@ -74,7 +74,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-fcdb495442a5b5950f9ad8e153208442.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-df2fd6490f311d7ccbd464032f04a562.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="../../site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
 <link href="../../site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
 <link href="../../site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
@@ -114,7 +114,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link rel="stylesheet" href="../../styles.css">
 </head>
 
-<body class="nav-fixed fullcontent">
+<body class="nav-fixed">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
@@ -165,7 +165,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="99">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#context" id="toc-context" class="nav-link active" data-scroll-target="#context">Context</a></li>
+  <li><a href="#defining-functions" id="toc-defining-functions" class="nav-link" data-scroll-target="#defining-functions">Defining functions</a></li>
+  <li><a href="#estimating-body-temperature-distribution-parameters-from-tpc-shape" id="toc-estimating-body-temperature-distribution-parameters-from-tpc-shape" class="nav-link" data-scroll-target="#estimating-body-temperature-distribution-parameters-from-tpc-shape">Estimating body temperature distribution parameters from TPC shape</a></li>
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next steps</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
 <main class="content quarto-banner-title-block" id="quarto-document-content">
 
@@ -173,9 +184,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<div class="cell" data-code-description="Setup">
+<div class="cell">
 <details class="code-fold">
-<summary>Code</summary>
+<summary>Setup</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># packages</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sn)</span>
@@ -189,9 +200,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="defining-functions" class="level2">
 <h2 class="anchored" data-anchor-id="defining-functions">Defining functions</h2>
 <p>First, I define a TPC function based on <a href="https://www.pnas.org/doi/10.1073/pnas.0709472105">Deutsch et al.&nbsp;(2008)</a>. This function uses T<sub>opt</sub>, CT<sub>min</sub>, and CT<sub>max</sub> to calculate the performance of an organism at a given body temperature. These parameters are often estimated from empirical data so it makes the whole thing very easily interpretable.</p>
-<div class="cell" data-code-description="Defining TPC function">
+<div class="cell" data-layout-align="center">
 <details class="code-fold">
-<summary>Code</summary>
+<summary>Defining TPC function</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define TPC function</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>tpc <span class="ot">&lt;-</span> <span class="cf">function</span>(temps, topt, ctmin, ctmax) {</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -226,9 +237,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="index_files/figure-html/tpc-function-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="index_files/figure-html/tpc-function-1.png" class="img-fluid figure-img" width="2100"></a></p>
+<p><a href="index_files/figure-html/tpc-function-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="index_files/figure-html/tpc-function-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></a></p>
 </figure>
 </div>
 </div>
@@ -238,9 +249,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>cp2dp()</code> from the <code>sn</code> package to convert the mean, sd, and skewness parameters to the location, scale, and shape parameters of the skew-normal distribution.</li>
 <li><code>dsn()</code> from the <code>sn</code> package to calculate the density of the skew-normal distribution at a given set of body temperatures.</li>
 </ul>
-<div class="cell" data-code-description="Defining function to generate body temperature distributions">
+<div class="cell" data-layout-align="center">
 <details class="code-fold">
-<summary>Code</summary>
+<summary>Defining function to generate body temperature distributions</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>gen_tb_distrib <span class="ot">&lt;-</span> <span class="cf">function</span>(temps, mean, sd, skew) {</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># stop if SD is negative or if skew is outside of -1 to 1</span></span>
@@ -266,17 +277,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="index_files/figure-html/create-tb-distribs-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="index_files/figure-html/create-tb-distribs-1.png" class="img-fluid figure-img" width="2100"></a></p>
+<p><a href="index_files/figure-html/create-tb-distribs-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img src="index_files/figure-html/create-tb-distribs-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></a></p>
 </figure>
 </div>
 </div>
 </div>
 <p>Third, I define a function to calculate the expected fitness of a TPC under a given body temperature distribution. I do this using the <a href="https://royalsocietypublishing.org/rspb/article/281/1779/20132612/77056">Vasseur et al.&nbsp;(2014)</a> approach, which is based on integrating the product of the TPC and the body temperature distribution across all possible body temperatures.</p>
-<div class="cell" data-code-description="Defining function to calculate expected fitness">
+<div class="cell">
 <details class="code-fold">
-<summary>Code</summary>
+<summary>Defining function to calculate expected fitness</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>exp_fitness <span class="ot">&lt;-</span> <span class="cf">function</span>(topt, ctmin, ctmax, mean_tb, sd_tb, skew_tb) {</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (sd_tb <span class="sc">==</span> <span class="dv">0</span>) {</span>
@@ -301,9 +312,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>Lastly, I define a function to calculate the risk of suffering a thermal injury, that is experiencing a body temperature below CT<sub>min</sub> or above CT<sub>max</sub>. This function is based on calculating the cumulative density of the body temperature distribution at CT<sub>min</sub> and CT<sub>max</sub>.</p>
-<div class="cell" data-code-description="Defining function to calculate thermal injury risk">
+<div class="cell">
 <details class="code-fold">
-<summary>Code</summary>
+<summary>Defining function to calculate thermal injury risk</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ptinj <span class="ot">&lt;-</span> <span class="cf">function</span>(ctmin, topt, ctmax, mean_tb, sd_tb, skew_tb) {</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (sd_tb <span class="sc">==</span> <span class="dv">0</span>) {</span>
@@ -340,17 +351,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="estimating-body-temperature-distribution-parameters-from-tpc-shape" class="level2">
 <h2 class="anchored" data-anchor-id="estimating-body-temperature-distribution-parameters-from-tpc-shape">Estimating body temperature distribution parameters from TPC shape</h2>
 <p>Below, I develop a pseudo-MCMC optimization algorithm to estimate the mean, sd, and skewness of the body temperature distribution that maximizes expected fitness while minimizing the risk of thermal injury. This is just a quick and dirty implementation to explore the idea, so it is not meant to be a rigorous optimization algorithm.</p>
-<div class="cell" data-code-description="MCMC optimization to estimate body temperature distribution parameters">
+<div class="cell">
 <details class="code-fold">
-<summary>Code</summary>
+<summary>MCMC optimization to estimate body temperature distribution parameters</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define TPC shape</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>topt <span class="ot">&lt;-</span> <span class="dv">30</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>ctmin <span class="ot">&lt;-</span> <span class="dv">5</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>ctmax <span class="ot">&lt;-</span> <span class="dv">36</span></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># define number of iterations</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>n_it <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>n_burn <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>n_it <span class="ot">&lt;-</span> <span class="dv">4000</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>n_burn <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># define objects to store mean_tb, sd_tb, and skew_tb values</span></span>
 <span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>mean_tbs <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n_it)</span>
@@ -447,53 +458,63 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>Next, I plot the MCMC chains and the posterior distributions of the mean, sd, and skewness parameters of the body temperature distribution.</p>
-<div class="cell" data-code-description="Plotting MCMC chains and posterior distributions">
+<div class="cell" data-layout-align="center">
 <details class="code-fold">
-<summary>Code</summary>
+<summary>Plotting MCMC chains and posterior distributions</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot posteriors of mean_tb, sd_tb, and skew_tb</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(<span class="at">mean_tb =</span> mean_tbs, <span class="at">sd_tb =</span> sd_tbs, <span class="at">skew_tb =</span> skew_tbs) <span class="sc">|&gt;</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">iteration =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="sc">-</span><span class="fu">c</span>(iteration), <span class="at">names_to =</span> <span class="st">"parameter"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>) <span class="sc">|&gt;</span> <span class="co"># nolint</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> iteration, <span class="at">y =</span> value)) <span class="sc">+</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> parameter, <span class="at">scales =</span> <span class="st">"free"</span>) <span class="sc">+</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Iteration"</span>, <span class="at">y =</span> <span class="st">"Value"</span>) <span class="sc">+</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">parameter =</span> <span class="fu">case_when</span>(</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    parameter <span class="sc">==</span> <span class="st">"mean_tb"</span> <span class="sc">~</span> <span class="st">"Mean Body Temperature"</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    parameter <span class="sc">==</span> <span class="st">"sd_tb"</span> <span class="sc">~</span> <span class="st">"SD of Body Temperature"</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    parameter <span class="sc">==</span> <span class="st">"skew_tb"</span> <span class="sc">~</span> <span class="st">"Skewness of Body Temperature"</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> iteration, <span class="at">y =</span> value)) <span class="sc">+</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> parameter, <span class="at">scales =</span> <span class="st">"free"</span>) <span class="sc">+</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Iteration"</span>, <span class="at">y =</span> <span class="st">"Value"</span>) <span class="sc">+</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="index_files/figure-html/plot-chains-and-posteriors-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="index_files/figure-html/plot-chains-and-posteriors-1.png" class="img-fluid figure-img" width="1800"></a></p>
+<p><a href="index_files/figure-html/plot-chains-and-posteriors-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-3"><img src="index_files/figure-html/plot-chains-and-posteriors-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></a></p>
 </figure>
 </div>
 </div>
 <details class="code-fold">
-<summary>Code</summary>
+<summary>Plotting MCMC chains and posterior distributions</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot posterior distributions of mean_tb, sd_tb, and skew_tb</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(<span class="at">mean_tb =</span> mean_tbs, <span class="at">sd_tb =</span> sd_tbs, <span class="at">skew_tb =</span> skew_tbs) <span class="sc">|&gt;</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">iteration =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(iteration <span class="sc">&gt;</span> n_burn) <span class="sc">|&gt;</span> <span class="co"># discard burn-in</span></span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>iteration) <span class="sc">|&gt;</span></span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"parameter"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>) <span class="sc">|&gt;</span> <span class="co"># nolint</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value)) <span class="sc">+</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">fill =</span> <span class="st">"lightblue"</span>) <span class="sc">+</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> parameter, <span class="at">scales =</span> <span class="st">"free"</span>) <span class="sc">+</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Value"</span>, <span class="at">y =</span> <span class="st">"Density"</span>) <span class="sc">+</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">parameter =</span> <span class="fu">case_when</span>(</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    parameter <span class="sc">==</span> <span class="st">"mean_tb"</span> <span class="sc">~</span> <span class="st">"Mean Body Temperature"</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    parameter <span class="sc">==</span> <span class="st">"sd_tb"</span> <span class="sc">~</span> <span class="st">"SD of Body Temperature"</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    parameter <span class="sc">==</span> <span class="st">"skew_tb"</span> <span class="sc">~</span> <span class="st">"Skewness of Body Temperature"</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> value)) <span class="sc">+</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">fill =</span> <span class="st">"lightblue"</span>) <span class="sc">+</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> parameter, <span class="at">scales =</span> <span class="st">"free"</span>) <span class="sc">+</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Value"</span>, <span class="at">y =</span> <span class="st">"Density"</span>) <span class="sc">+</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="index_files/figure-html/plot-chains-and-posteriors-2.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="index_files/figure-html/plot-chains-and-posteriors-2.png" class="img-fluid figure-img" width="1800"></a></p>
+<p><a href="index_files/figure-html/plot-chains-and-posteriors-2.png" class="lightbox" data-gallery="quarto-lightbox-gallery-4"><img src="index_files/figure-html/plot-chains-and-posteriors-2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></a></p>
 </figure>
 </div>
 </div>
 </div>
 <p>In many of the test runs I did, the MCM algorithm swings too much, specially when estimating the mean. I have to think about how to make this as efficient as possible.</p>
 <p>And finally, in the classic Bayesian fashion, I summarize the posterior distributions of the mean, sd, and skewness parameters of the body temperature distribution by calculating their means and 95% confidence intervals.</p>
-<div class="cell" data-code-description="Summarizing posterior distributions of body temperature distribution parameters">
+<div class="cell">
 <details class="code-fold">
-<summary>Code</summary>
+<summary>Summarizing posterior distributions of body temperature distribution parameters</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># get average and 95% confidence interval of tb distribution parameters</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>posterior <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">mean_tb =</span> mean_tbs, <span class="at">sd_tb =</span> sd_tbs, <span class="at">skew_tb =</span> skew_tbs) <span class="sc">|&gt;</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">iteration =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
@@ -532,21 +553,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">mean_tb</td>
-<td style="text-align: right;">25.9997698</td>
-<td style="text-align: right;">23.1570019</td>
-<td style="text-align: right;">30.1976243</td>
+<td style="text-align: right;">21.2831453</td>
+<td style="text-align: right;">18.8178402</td>
+<td style="text-align: right;">23.5130269</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">sd_tb</td>
-<td style="text-align: right;">2.7667919</td>
+<td style="text-align: right;">4.5217119</td>
 <td style="text-align: right;">1.0000000</td>
-<td style="text-align: right;">12.6767780</td>
+<td style="text-align: right;">28.7182926</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">skew_tb</td>
-<td style="text-align: right;">-0.7504404</td>
-<td style="text-align: right;">-0.9813645</td>
-<td style="text-align: right;">-0.6024644</td>
+<td style="text-align: right;">-0.5319612</td>
+<td style="text-align: right;">-0.9249648</td>
+<td style="text-align: right;">-0.2412729</td>
 </tr>
 </tbody>
 </table>
@@ -555,9 +576,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>Just to get a sense of the predicted body temperature distribution, I plot the TPC and the predicted body temperature distribution based on the mean values of the parameters estimated by the MCMC algorithm.</p>
-<div class="cell" data-code-description="Plotting TPC and predicted body temperature distribution">
+<div class="cell" data-layout-align="center">
 <details class="code-fold">
-<summary>Code</summary>
+<summary>Plotting TPC and predicted body temperature distribution</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot predicted body temperature distribution and TPC</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>temps <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">50</span>, <span class="at">by =</span> <span class="fl">0.1</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(</span>
@@ -574,16 +595,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(</span>
 <span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">xintercept =</span> posterior<span class="sc">$</span>mean[<span class="dv">1</span>], <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"red"</span></span>
 <span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(ctmin <span class="sc">-</span> <span class="dv">5</span>, ctmax <span class="sc">+</span> <span class="dv">5</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Body Temperature (°C)"</span>, <span class="at">y =</span> <span class="st">"Performance / Density"</span>) <span class="sc">+</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(ctmin <span class="sc">-</span> <span class="dv">5</span>, ctmax <span class="sc">+</span> <span class="dv">5</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="index_files/figure-html/plot-tpc-and-tb-distribs-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-5"><img src="index_files/figure-html/plot-tpc-and-tb-distribs-1.png" class="img-fluid figure-img" width="1800"></a></p>
+<p><a href="index_files/figure-html/plot-tpc-and-tb-distribs-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-5"><img src="index_files/figure-html/plot-tpc-and-tb-distribs-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:75.0%"></a></p>
 </figure>
 </div>
 </div>
 </div>
+</section>
+<section id="next-steps" class="level2">
+<h2 class="anchored" data-anchor-id="next-steps">Next steps</h2>
+<ul>
+<li>I have to improve the MCMC algorithm so it doesn’t bounce as much. I should do some deep diving into the MCMC literature to see how to do this in a more efficient way.</li>
+<li>I should also think about how to incorporate bimodal body temperature distributions or body temperature distributions arising from a function of body temperature fluctuation over time (e.g., diurnal vs nocturnal temperatures).</li>
+</ul>
 
 
 </section>

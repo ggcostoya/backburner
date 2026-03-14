@@ -1,0 +1,237 @@
+---
+title: "Abundance patterns in lizards by life stage; an iNaturalist case study"
+description: "Getting iNaturalist observations of US lizards tagged by either adult or juvenile life stage"
+date: 2026-03-13
+categories: [lizards, iNaturalist]
+format:
+  html:
+    code-fold: true
+    fig-dpi: 300
+    lightbox: true
+---
+
+```{r}
+#| code-description: "Setup"
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(rnaturalearth)
+library(viridis)
+library(rinat)
+library(ggridges)
+```
+
+## Context
+
+I have always been curious about how abundance of lizards changes across the year by life stage. Based on browsing around iNaturalist, I always see that adult lizards in the US are mostly observed in the late spring while juveniles are mostly observed in the late summer. I wanted to see if this pattern holds across the US and across species, or if it is just a pattern of a few common species.
+
+## `rinat` queries
+
+I first get the data by using the `get_inat_obs()` function from the `rinat` package. I query for all lizard observations in the US that are tagged as either adult or juvenile, and that have research grade quality. Importantly, to get adult or juvenile data you must specify the `annotation` argument with the appropriate annotation IDs. For life stage, the annotation ID is 1, and the value for juvenile is 8 while the value for adult is 2. I also specify a bounding box to limit the search to the US, and I exclude records without coordinates by setting `geo = TRUE`. Finally, I set `maxresults = 1000` to get a maximum of 1000 observations for each query so we don't spend six hours here. 
+
+```{r obtain-inat-data, eval = FALSE}
+#| code-description: "iNaturalist queries"
+
+## Note: I am not running this code chunk because it takes a long time to run
+# and I have already saved the processed data in an .rda file that I will load
+# in the next chunk. You can run this code if you want to get the data,
+# but be aware that it may take a while to run.
+
+# get juvenile lizard observations in the US
+juvies <- get_inat_obs(
+  query = "Lizards",
+  quality = "research",
+  geo = TRUE, # exclude records without coordinates
+  annotation = c(1, 8), # 1 = life-stage, 8 = juvenile
+  bounds = c(30, -127, 48, -90), # south, west, north, east order
+  maxresults = 1000
+)
+
+# get adult lizards in the US
+adults <- get_inat_obs(
+  query = "Lizards",
+  quality = "research",
+  geo = TRUE, # exclude records without coordinates
+  annotation = c(1, 2), # 1 = life-stage, 2 = adult
+  bounds = c(30, -127, 48, -90), # south, west, north, east order
+  maxresults = 1000
+)
+
+# add life stage to juvenile and adult data
+juvies$life_stage <- "juvenile"
+adults$life_stage <- "adult"
+
+# combine juvenile and adult data
+lizard_data <- rbind(juvies, adults)
+
+# get columns of interest
+lizard_data <- lizard_data |>
+  select(
+    scientific_name, longitude, latitude,
+    time_observed_at, time_zone, life_stage
+  ) |>
+  as_tibble()
+
+# further filter latitude and longitude to fall within box
+lizard_data <- lizard_data |>
+  filter(longitude >= -127 & longitude <= -90) |>
+  filter(latitude >= 30 & latitude <= 48)
+
+# remove records in wierd time zones
+lizard_data <- lizard_data |>
+  filter(!time_zone %in% c("Hawaii", "Bogota", "UTC"))
+
+# change names of time zones to match those used by lubridate
+lizard_data <- lizard_data |>
+  mutate(time_zone = case_when(
+    time_zone == "Pacific Time (US & Canada)" ~ "US/Pacific",
+    time_zone == "Mountain Time (US & Canada)" ~ "US/Mountain",
+    time_zone == "Central Time (US & Canada)" ~ "US/Central",
+    time_zone == "Eastern Time (US & Canada)" ~ "US/Eastern",
+    time_zone == "Arizona" ~ "US/Mountain",
+    time_zone == "America/Boise" ~ "US/Mountain",
+    time_zone == "America/Hermosillo" ~ "US/Mountain",
+    time_zone == "Tijuana" ~ "US/Pacific",
+    time_zone == "America/Ojinaga" ~ "US/Central",
+    TRUE ~ time_zone
+  ))
+
+# get local time, year and day of the year
+lizard_data <- lizard_data |>
+  as_tibble() |>
+  mutate(utc_time = as.POSIXct(time_observed_at, format = "%Y-%m-%d %H:%M:%S", tz = "UTC")) |> # nolint
+  mutate(local_time = with_tz(utc_time, tzone = time_zone)) |>
+  mutate(
+    year = lubridate::year(local_time),
+    doy = lubridate::yday(local_time),
+    mod = lubridate::hour(local_time) * 60 + lubridate::minute(local_time)
+  ) |>
+  rename(
+    sps = scientific_name,
+    lat = latitude,
+    lon = longitude
+  ) |>
+  select(life_stage, sps, lon, lat, year, doy, mod)
+
+# save processed data
+save(lizard_data, file = "lizard_data.rda")
+```
+
+## Exploring the data
+
+To get a sense of the data, I first look at the species composition of the observations. I generate columns for genus and species from the `sps` column, and I remove any subspecies information. Then, I filter out any species with less than 10 observations total to focus on the more common species. Finally, I plot a histogram of the counts of each species by life stage.
+
+```{r plot-species-composition}
+#| code-description: "Plot species counts"
+#| fig.align: "center"
+#| fig.width: 6
+#| fig.height: 4
+#| message: false
+#| warning: false
+#| out.width: "75%"
+
+# load lizard data
+load("lizard_data.rda")
+
+# generate columns for genus and species from sps column and remove subspecies
+lizard_data <- lizard_data |>
+  separate(sps, into = c("genus", "species", "subspecies"), sep = " ", fill = "right") |> # nolint
+  select(-subspecies)
+
+# filter all species with less than 10 observations total
+lizard_data <- lizard_data |>
+  group_by(genus, species) |>
+  filter(n() >= 10) |>
+  ungroup()
+
+# check species composition
+lizard_data |>
+  ggplot(aes(y = paste(genus, species), fill = life_stage)) +
+  geom_histogram(aes(x = ..count..), stat = "count") +
+  scale_fill_manual(values = c("adult" = "steelblue", "juvenile" = "skyblue")) +
+  scale_color_manual(values = c("adult" = "steelblue", "juvenile" = "skyblue")) + # nolint
+  theme_minimal() +
+  labs(
+    x = "Count",
+    y = "Species",
+    fill = "Life stage",
+    color = "Life stage"
+  )
+```
+
+To be expected, *Uta stansburiana* is the most observed species, followed by *Sceloporus occidentalis* and *Elgaria multicarianta*. This is interesting because these might not necessarily be the most common species in the US, but they are likely to be the species where it is easiest to distinguish between adults and juveniles, which is one of the filters I imposed on the data I downloaded early. This is also extremely biased towards juveniles, which is likely because people might have a much higher tendency to identify juveniles as such than adults. This is something to keep in mind when interpreting the results, as it might be that the patterns we see are more reflective of observer behavior than of actual abundance patterns.
+
+Now let's plot how individual counts change over time by life stage and latitude. I first group the data by life stage, latitude (rounded to the nearest degree), and month (calculated as day of year divided by 30). Then, I calculate the count of observations in each group, and I convert that to a relative count by dividing by the total count in each life stage.
+
+```{r plot-abundance-time}
+#| code-description: "Plot abundance patterns for all lizards"
+#| fig.align: "center"
+#| fig.width: 6
+#| fig.height: 4
+#| message: false
+#| warning: false
+#| out.width: "75%"
+
+lizard_data |>
+  mutate(lat_group = round(lat)) |>
+  filter(lat_group > 31 & lat_group < 40) |>
+  mutate(date = as.Date(doy, origin = "2020-01-01")) |>
+  ggplot(aes(x = doy, y = as.factor(lat_group))) +
+  geom_density_ridges2(
+    aes(fill = life_stage, color = life_stage), alpha = 0.75
+  ) +
+  scale_fill_manual(values = c("adult" = "steelblue", "juvenile" = "skyblue")) +
+  scale_color_manual(values = c("adult" = "steelblue", "juvenile" = "skyblue")) + # nolint
+  scale_x_continuous(
+    limits = c(0, 365),
+    expand = c(0, 0),
+    breaks = seq(0, 330, by = 30),
+    labels = month.abb
+  ) +
+  labs(
+    x = "Day of year",
+    y = "Latitude",
+    fill = "Life stage",
+    color = "Life stage"
+  )
+```
+
+Now let's do the same as above but only for *Uta stansburiana* to see if the pattern is similar for this species, which is the most observed one in the dataset.
+
+```{r plot-abundance-time-uta}
+#| code-description: "Plot abundance patterns for *Uta stansburiana*"
+#| fig.align: "center"
+#| fig.width: 6
+#| fig.height: 4
+#| message: false
+#| warning: false
+#| out.width: "75%"
+
+lizard_data |>
+  filter(genus == "Uta" & species == "stansburiana") |>
+  mutate(lat_group = round(lat)) |>
+  filter(lat_group > 31 & lat_group < 40) |>
+  mutate(date = as.Date(doy, origin = "2020-01-01")) |>
+  ggplot(aes(x = doy, y = as.factor(lat_group))) +
+  geom_density_ridges2(
+    aes(fill = life_stage, color = life_stage), alpha = 0.75
+  ) +
+  scale_fill_manual(values = c("adult" = "steelblue", "juvenile" = "skyblue")) +
+  scale_color_manual(values = c("adult" = "steelblue", "juvenile" = "skyblue")) + # nolint
+  scale_x_continuous(
+    limits = c(0, 365),
+    expand = c(0, 0),
+    breaks = seq(0, 330, by = 30),
+    labels = month.abb
+  ) +
+  labs(
+    x = "Day of year",
+    y = "Latitude group",
+    fill = "Life stage",
+    color = "Life stage",
+    title = "Abundance patterns of *Uta stansburiana* by life stage and latitude" # nolint
+  )
+```
+
+The peak of adult observations is incredibly consistent across latitudes around March. THAT is very suspicious. 

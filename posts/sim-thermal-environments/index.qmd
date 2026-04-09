@@ -1,0 +1,225 @@
+---
+title: "Simulating thermal environments to understand temperature distributions"
+description: "Simulating types of thermal environments to see the distributions that govern them"
+date: 2026-04-07
+categories: [statistics, simulation]
+format:
+  html:
+    code-fold: true
+    fig-align: "center"
+    fig-dpi: 300
+    lightbox: true
+---
+
+```{r setup}
+#| code-summary: "Setup"
+#| message: false
+#| warning: false
+
+# packages
+library(tidyverse)
+library(kableExtra)
+library(PearsonDS)
+```
+
+## Context
+
+I am interested in defining a distribution that can characterize thermal regimes that change over time. I do not think that a normal distribution is the appropriate distribution to use in most cases as by the cyclical nature of temperature changes, the distribution of temperatures is likely to be either bimodal or heavily skewed. 
+
+## Define function for temperature fluctuation
+
+Based on a quick as to Gemini, I can define a simple function to simulate temperature fluctuations over a given period of time following the function below:
+
+$$T(t) = T_{\text{mean}} + A \cdot \sin\left(\frac{2\pi}{t_{\text{max}}}(t - \phi)\right)$$
+
+Where $T(t)$ is the temperature at time $t$, $T_{\text{mean}}$ is the mean daily temperature, $A$ is the amplitude of the temperature fluctuation, $t_{max}$ is the maximum value within the period considered and $\phi$ is the phase shift that determines when the peak temperature occurs during the day. Below is the function in R with an example usage case:
+
+```{r daily-temp-fluctuation}
+#| code-summary: "Defining and testing temperature fluctuation function"
+#| code-fold: false
+#| fig.width: 4
+#| fig.height: 3
+
+# define function
+temp_fluct <- function(t, t_max, t_mean, amp, peak) {
+  t_mean + amp * sin((2 * pi / t_max) * (t - peak + t_max / 4))
+}
+
+# example usage over a 24 hour period by minutes
+tibble(
+  time = seq(0, 24 * 60, by = 1),
+  temp = temp_fluct(
+    time, t_max = 24 * 60, t_mean = 22.5, amp = 7.5, peak = 15 * 60
+  )
+) |>
+  ggplot(aes(x = time, y = temp)) +
+  geom_line(linewidth = 1.25) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Time (hours)", y = "Temperature (°C)")
+```
+
+Easy enough. Here I could also add a bit of noise by adding an auto-correlated error term to the function, or divide fluctuations between day-time and night-time periods but I will save that for another post. 
+
+Here is the crux of the problem. Let's visualize the distribution of temperatures over a day overlaid over the temperature fluctuation over time:
+
+```{r temp-fluctuation-distribution}
+#| code-summary: "Visualizing temperature fluctuation distribution over a day"
+#| fig.width: 4
+#| fig.height: 3
+tibble(
+  time = seq(0, 24 * 60, by = 1),
+  temp = temp_fluct(
+    time, t_max = 24 * 60, t_mean = 22.5, amp = 7.5, peak = 15 * 60
+  )
+) |>
+  ggplot(aes(y = temp)) +
+  geom_histogram(
+    aes(x = after_stat(count) * 2), # exaggerating counts a bit for viz.
+    fill = "steelblue", alpha = 0.5
+  ) +
+  geom_line(aes(x = time), linewidth = 1.25) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Time (minutes)", y = "Temperature (°C)")
+```
+
+The distribution over a day **is totally bimodal**. Even if you just take day-time and night-time periods the distributions are extremely skewed. This is a problem for many of the commonly used distributions in statistics that assume unimodality and symmetry.
+
+## Defining a function for *body* temperature fluctuations
+
+```{r body-temp-fluctuation}
+#| code-summary: "Visualizing body temperature fluctuation distribution over a day"
+#| fig.width: 4
+#| fig.height: 3
+
+body_temp_fluct <- function(t, t_max, t_mean, amp, peak, t_var, t_opt, ct_min, ct_max) { # nolint
+
+  env_temp <- temp_fluct(t, t_max, t_mean, amp, peak) # nolint
+
+  dplyr::case_when(
+    env_temp <= ct_min - t_var ~ env_temp,
+    env_temp >= ct_min - t_var & env_temp < t_opt - t_var ~ env_temp + t_var,
+    env_temp >= t_opt - t_var & env_temp <= t_opt + t_var ~ t_opt,
+    env_temp > t_opt + t_var & env_temp < ct_max + t_var ~ env_temp - t_var,
+    env_temp >= ct_max + t_var ~ env_temp
+  )
+
+}
+
+# test function
+t_mean_general <- 20.5
+amp_general <- 12
+body_temps <- body_temp_fluct(
+  t = seq(0, 24 * 60, by = 1),
+  t_max = 24 * 60,
+  t_mean = t_mean_general,
+  amp = amp_general,
+  peak = 15 * 60,
+  t_var = 5,
+  t_opt = 30,
+  ct_min = 10,
+  ct_max = 40
+)
+ambient_temps <- temp_fluct(
+  t = seq(0, 24 * 60, by = 1),
+  t_max = 24 * 60,
+  t_mean = t_mean_general,
+  amp = amp_general,
+  peak = 15 * 60
+)
+tibble(
+  time = seq(0, 24 * 60, by = 1),
+  ambient_temp = ambient_temps,
+  body_temp = body_temps
+) |>
+  ggplot() +
+  geom_histogram(
+    aes(y = ambient_temp, x = after_stat(count)),
+    fill = "steelblue", alpha = 0.5
+  ) +
+  geom_histogram(
+    aes(y = body_temp, x = after_stat(count)),
+    fill = "salmon", alpha = 0.5
+  ) +
+  geom_line(aes(x = time, y = ambient_temp), linewidth = 1.25, color = "blue") +
+  geom_line(aes(x = time, y = body_temp), linewidth = 1.25, color = "red") +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Time (minutes)", y = "Body Temperature (°C)")
+
+```
+
+## Combining yearly and daily fluctuations
+
+Let's assume that fluctuations ovr a year and a day follow the same function we defined previously. That is going to be most likely NOT the case but let's roll for it now. 
+
+```{r yearly-daily-fluctuation}
+#| code-summary: "Combining yearly and daily fluctuations"
+#| fig.width: 8
+#| fig.height: 3
+
+# define parameters
+year_mean_temp <- 12
+year_amp <- 10
+day_amp <- 15
+t_max_year <- 365
+t_max_day <- 24
+year_peak <- t_max_year * 0.6
+day_peak <- t_max_day * 0.6
+
+# generate data
+temp_data <- tibble(
+  doy = rep(1:t_max_year, each = t_max_day),
+  mod = rep(1:t_max_day, times = t_max_year),
+  mean_doy_temp = temp_fluct(doy, t_max_year, year_mean_temp, year_amp, year_peak), # nolint
+  mean_hour_temp = temp_fluct(mod, t_max_day, mean_doy_temp, day_amp, day_peak),
+  mean_hour_tb_temp = body_temp_fluct(
+    t = mod, t_max = t_max_day, t_mean = mean_doy_temp, amp = day_amp,
+    peak = day_peak, t_var = 5, t_opt = 30, ct_min = 10, ct_max = 40
+  ),
+  cum_time = seq(1, t_max_year * t_max_day)
+)
+
+# plot sequence of temperatures over a year
+temp_data |>
+  ggplot() +
+  geom_histogram(
+    aes(x = after_stat(count) * 5, y = mean_hour_temp),
+    fill = "steelblue", alpha = 0.5, bins = 100
+  ) +
+  geom_histogram(
+    aes(x = after_stat(count) * 5, y = mean_hour_tb_temp),
+    fill = "salmon", alpha = 0.5, bins = 100
+  ) +
+  geom_line(
+    aes(x = cum_time, y = mean_hour_temp),
+    color = "steelblue", linewidth = 0.25, alpha = 0.25
+  ) +
+  geom_line(
+    aes(x = cum_time, y = mean_hour_tb_temp),
+    color = "red", linewidth = 0.25, alpha = 0.25
+  ) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(x = "Time (cummulative minutes)", y = "Temperature (°C)")
+
+```
+
+The distribution seems to normalize a bit while still being bimodal. Let me just show the distributio of temperatures by itself below:
+
+```{r temp-distributions}
+#| code-summary: "Plotting tb distributions"
+#| fig.width: 8
+#| fig.height: 3
+
+temp_data |>
+  ggplot() +
+  geom_histogram(
+    aes(x = mean_hour_temp), fill = "steelblue", alpha = 0.5, bins = 50
+  ) +
+  geom_histogram(
+    aes(x = mean_hour_tb_temp), fill = "salmon", alpha = 0.5, bins = 50
+  ) +
+  labs(x = "Temperature (°C)", y = "Frequency") +
+  scale_y_continuous(expand = c(0, 0))
+
+```
+
+There is this weird gap in the body temperature distribution which I think is a byproduct of the way I defined the function. I will have to think about how to make it more realistic but I will save that for another post.

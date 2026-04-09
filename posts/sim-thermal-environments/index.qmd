@@ -39,6 +39,7 @@ Where $T(t)$ is the temperature at time $t$, $T_{\text{mean}}$ is the mean daily
 #| code-fold: false
 #| fig.width: 4
 #| fig.height: 3
+#| out.width: 75%
 
 # define function
 temp_fluct <- function(t, t_max, t_mean, amp, peak) {
@@ -66,6 +67,8 @@ Here is the crux of the problem. Let's visualize the distribution of temperature
 #| code-summary: "Visualizing temperature fluctuation distribution over a day"
 #| fig.width: 4
 #| fig.height: 3
+#| out-width: 75%
+
 tibble(
   time = seq(0, 24 * 60, by = 1),
   temp = temp_fluct(
@@ -90,6 +93,7 @@ The distribution over a day **is totally bimodal**. Even if you just take day-ti
 #| code-summary: "Visualizing body temperature fluctuation distribution over a day"
 #| fig.width: 4
 #| fig.height: 3
+#| out-width: 75%
 
 body_temp_fluct <- function(t, t_max, t_mean, amp, peak, t_var, t_opt, ct_min, ct_max) { # nolint
 
@@ -155,6 +159,7 @@ Let's assume that fluctuations ovr a year and a day follow the same function we 
 #| code-summary: "Combining yearly and daily fluctuations"
 #| fig.width: 8
 #| fig.height: 3
+#| out.width: 75%
 
 # define parameters
 year_mean_temp <- 12
@@ -206,8 +211,9 @@ The distribution seems to normalize a bit while still being bimodal. Let me just
 
 ```{r temp-distributions}
 #| code-summary: "Plotting tb distributions"
-#| fig.width: 8
+#| fig.width: 4
 #| fig.height: 3
+#| out-width: 75%
 
 temp_data |>
   ggplot() +
@@ -222,4 +228,4 @@ temp_data |>
 
 ```
 
-There is this weird gap in the body temperature distribution which I think is a byproduct of the way I defined the function. I will have to think about how to make it more realistic but I will save that for another post.
+There is this weird gap in the body temperature distribution which I think is a byproduct of the way I defined the function. I will have to think about how to make it more realistic but I will save that for anot

@@ -1,0 +1,112 @@
+---
+title: "What's more important for a Formula 1 driver: the car or the driver?"
+description: "A data-driven analysis of the relative importance of the driver and the car in Formula 1 racing."
+date: 2026-06-05
+categories: [random]
+format:
+  html:
+    code-fold: true
+    fig-dpi: 300
+    lightbox: true
+---
+
+```{r r-setup}
+#| code-summary: "R setup"
+#| message: false
+#| warning: false
+
+# packages
+library(tidyverse)
+```
+
+## Context
+
+## Reading and processing data
+
+```{r read-process-data}
+#| code-summary: "Read and process data"
+
+results <- read.csv("results.csv")
+drivers <- read.csv("drivers.csv")
+constructors <- read.csv("constructors.csv")
+races <- read.csv("races.csv")
+
+# results modified
+results <- results |>
+  as_tibble() |>
+  left_join(drivers, by = "driverId") |>
+  left_join(constructors, by = "constructorId") |>
+  left_join(races, by = "raceId") |>
+  mutate(
+    driver = paste(forename, surname, sep = "_")
+  ) |>
+  select(
+    grid, position, driver, constructorRef, year, name.y
+  ) |>
+  mutate(
+    position = as.numeric(position),
+    position = ifelse(is.na(position), 25, position),
+    position = ifelse(position > 25, 25, position)
+  ) |>
+  rename(
+    grid_position = grid,
+    final_position = position,
+    constructor = constructorRef,
+    year = year,
+    circuit = name.y
+  ) |>
+  filter(year > 1990)
+```
+
+### To the point, get to the damn
+
+```{r analyze-results}
+#| fig-aling: "center"
+#| fig-height: 12
+#| fig-width: 4.5
+
+results_by_driver <- results |>
+  group_by(constructor, year, circuit) |>
+  mutate(
+    final_position = ifelse(final_position == "R", NA, final_position),
+    grid_position_median = median(as.numeric(grid_position), na.rm = TRUE),
+    final_position_median = median(as.numeric(final_position), na.rm = TRUE)
+  ) |>
+  ungroup() |>
+  mutate(
+    grid_position_diff = -1 * (as.numeric(grid_position) - grid_position_median),
+    final_position_diff = -1 * (as.numeric(final_position) - final_position_median)
+  ) |>
+  group_by(driver) |>
+  summarise(
+    n_races = n(),
+    grid_position_diff_mean = mean(grid_position_diff, na.rm = TRUE),
+    grid_position_diff_sd = sd(grid_position_diff, na.rm = TRUE),
+    final_position_diff_mean = mean(final_position_diff, na.rm = TRUE),
+    final_position_diff_sd = sd(final_position_diff, na.rm = TRUE)
+  ) |>
+  filter(!is.nan(final_position_diff_mean)) |>
+  filter(n_races >= 50)
+
+results_by_driver |>
+  arrange(desc(final_position_diff_mean)) |>
+  ggplot(aes(y = reorder(driver, final_position_diff_mean), x = final_position_diff_mean)) +
+  geom_pointrange(
+    aes(
+      xmin = final_position_diff_mean - final_position_diff_sd,
+      xmax = final_position_diff_mean + final_position_diff_sd
+    ),
+    size = 0.25
+  ) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  theme_minimal() +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_text(size = 6),
+    panel.grid.y = element_blank()
+  ) +
+  labs(
+    x = "Average difference in race final position compared to\nthe median final position of the team",
+    subtitle = "From 1991 to 2025, only drivers\nwith at least 30 races are included"
+  )
+```
